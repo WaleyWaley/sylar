@@ -245,7 +245,14 @@ namespace sylar{
         void format(std::ostream &os, Logger::ptr logger, LogLevel::Level level, LogEvent::ptr event) override{
             os << event->getFiberId();
         }
-    }
+    };
+
+    class LineFormatItem : public LogFormatter::FormatItem{
+    public:
+        void format(std::ostream& os, Logger::ptr Logger, LogLevel::Level level, LogEvent::ptr event) override{
+            os << event->getLine();
+        }
+    };
 
     const char *LogLevel::ToString(LogLevel::Level Level)
     {
