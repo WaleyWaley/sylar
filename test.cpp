@@ -57,7 +57,7 @@ namespace sylar{
         return !!m_filestream;
     }
 
-    void FileLogAppender::log(LogLevel::Level level, LogEvent::ptr event){
+    void FileLogAppender::log(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event){
         // 当这条日志的等级 >= 设定的最低等级时才记录。
          if(level >= m_level){
             // 右边的文件通过<<传入了m_filestream代表的文件里
@@ -67,16 +67,16 @@ namespace sylar{
 
     void StdoutLogAppender::log(LogLevel::Level level, LogEvent::ptr event){
         if (level >= m_level)
-            std::cout << m_formatter->format(event);
+            std::cout << m_formatter->format(level, event);
     }
 
     //
     LogFormatter::LogFormatter(const std::string &pattern):m_pattern(pattern){}
 
-    std::string LogFormatter::format(LogEvent::ptr event){
+    std::string LogFormatter::format(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event){
         std::stringstream ss;
         for(auto& i: m_items)
-            i->format(ss, event);
+            i->format(ss, logger, level, event);
         return ss.str();
     }
 
@@ -197,19 +197,58 @@ namespace sylar{
 
     class MessageFormatItem : public LogFormatter::FormatItem{
     public:
-        void format(std::ostream& os, LogEvent::ptr event) override{
+        void format(std::ostream& os, Logger::ptr logger, LogLevel::Level level, LogEvent::ptr event) override{
             os << event->getContent();
         }
     };
 
     class LevelFormatItem : public LogFormatter::FormatItem{
     public:
-        void format(std::ostream& os, LogEvent::ptr event) override{
-            os << LogLevel::ToString(event->getLevel());
+        void format(std::ostream& os, Logger::ptr logger, LogLevel::Level level, LogEvent::ptr event) override{
+            os << LogLevel::ToString(level);
         }
     };
 
-    const char* LogLevel::ToString(LogLevel::Level Level){
+    class ElapseFormatItem : public LogFormatter::FormatItem{
+    public:
+        void format(std::ostream& os, Logger::ptr logger, LogLevel::Level level, LogEvent::ptr event) override{
+            os << event->getElapse();
+        }
+    };
+
+    class NameFormatItem : public LogFormatter::FormatItem{
+    public:
+        void format(std::ostream& os, Logger::ptr logger, LogLevel::Level level, LogEvent::ptr event) override{
+            os << event->getName();
+        }
+    };
+
+    class ThreadIdFormatItem : public LogFormatter::FormatItem{
+    public:
+        void format(std::ostream& os, Logger::ptr logger, LogLevel::Level level, LogEvent::ptr event) override{
+            os << event->getThreadId();
+        }
+    };
+
+    class FiberIdFormatItem : public LogFormatter::FormatItem{
+    public:
+        void format(std::ostream& os, Logger::ptr logger, LogLevel::Level level, LogEvent::ptr event) override{
+            os << event->getFiberId();
+        }
+    };
+    
+    class DateTimeFormatItem: public LogFormatter::FormatItem{
+    public:
+        DateTimeFormatItem(const std::string& format = "%Y:%m:%d %H:%M:%S"):m_format(format){
+
+        }
+        void format(std::ostream &os, Logger::ptr logger, LogLevel::Level level, LogEvent::ptr event) override{
+            os << event->getFiberId();
+        }
+    }
+
+    const char *LogLevel::ToString(LogLevel::Level Level)
+    {
         switch(Level){
     #define XX(name)         \
             case LogLevel::name: \

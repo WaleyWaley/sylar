@@ -12,6 +12,7 @@
 
 
 namespace sylar{
+    class Logger;
     // 日志事件
     class LogEvent{
         public:
@@ -25,6 +26,7 @@ namespace sylar{
             uint32_t getFiberId() const { return m_fiberId; }
             uint64_t getTime() const { return m_time; }
             const std::string &getContent() const { return m_content; }
+            const std::string &getName() const { return m_name; }
             // Loglevel::Level getLevel() const { return m_level; };
 
         private:
@@ -34,8 +36,8 @@ namespace sylar{
             uint32_t m_threadId = 0;        // 线程id
             uint32_t m_fiberId = 0;         // 协程id
             uint64_t m_time = 0;            // 时间戳
-
-            std::string m_content;          // 消息体？
+            std::string m_name;
+            std::string m_content; // 消息体,Message
     };
 
     // 日志级别
@@ -52,19 +54,20 @@ namespace sylar{
             };
             // 把enum变量转换为字符串比如:Level::DEBUG -> "DEBUG"
             static const char *ToString(LogLevel::Level Level);
-            LogLevel::Level getLevel();
     };
 
     // 日志格式器
     class LogFormatter{
         public:
             typedef std::shared_ptr<LogFormatter> ptr;
+
             // Constructor
             LogFormatter(const std::string &pattern);
-            // &t    %thread_id %m%n
-            std::string format(LogEvent::ptr event);
 
-        private:
+            // &t    %thread_id %m%n
+            std::string format(std::shared_ptr<Logger> logger, LogLevel::Level level,LogEvent::ptr event);
+
+        public:
             class FormatItem{
                 public:
                     typedef std::shared_ptr<FormatItem> ptr;
@@ -74,7 +77,7 @@ namespace sylar{
                     // 输出到文件
                     // 1. 使用 std::ostream& 作为父类，兼容 stringstream 和 ofstream
                     // 2. 必须加 & (引用)，流不能拷贝
-                    virtual void format(LogLevel::Level level, LogEvent::ptr event) = 0;
+                    virtual void format(std::ostream& os, std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event) = 0;
             };
             void init();
 
@@ -89,7 +92,9 @@ namespace sylar{
             typedef std::shared_ptr<LogAppender> ptr;
             // 虚函数需要子类自定义
             virtual ~LogAppender() {};
-            virtual void log(LogLevel::Level level, LogEvent::ptr event);
+            
+            virtual void log(std::shared_ptr<Logger> Logger, LogLevel::Level level, LogEvent::ptr event) = 0;
+
             LogFormatter::ptr getFormatter() const{
                 return m_formatter;
             }
@@ -118,6 +123,7 @@ namespace sylar{
             void delAppender(LogAppender::ptr appender);
             LogLevel::Level getLevel() const { return m_level; };
             void setLevel(LogLevel::Level val) { m_level = val; };
+            const std::string getName() const { return m_name; };
 
         private:
             std::string m_name;                     // 日志名称
