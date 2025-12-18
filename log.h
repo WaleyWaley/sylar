@@ -12,12 +12,40 @@
 
 
 namespace sylar{
-    class Logger;
+    
+    // 日志器
+    class Logger : public std::enable_shared_from_this<Logger>{
+        public:
+            typedef std::shared_ptr<Logger> ptr;
+            Logger(const std::string &name = "root");
+            
+            //定义了一个输出日志的方法 传入想要查看的最大日志级别
+            void log(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event);
+
+            void debug(LogEvent::ptr event);
+            void info(LogEvent::ptr event);
+            void warn(LogEvent::ptr event);
+            void error(LogEvent::ptr event);
+            void fatal(LogEvent::ptr event);
+
+            void addAppender(LogAppender::ptr appender);
+            void delAppender(LogAppender::ptr appender);
+            LogLevel::Level getLevel() const { return m_level; };
+            void setLevel(LogLevel::Level val) { m_level = val; };
+            const std::string getName() const { return m_name; };
+
+        private:
+            std::string m_name;                         // 日志名称
+            LogLevel::Level m_level;                    // 日志级别
+            std::list<LogAppender::ptr> m_appenders;    // Appender集合
+    };
+
     // 日志事件
     class LogEvent{
         public:
             typedef std::shared_ptr<LogEvent> ptr;
-            LogEvent();
+
+            LogEvent(LogLevel::Level level, const char* file, int32_t m_line, uint32_t elpase, uint32_t threadId, uint32_t fiberId, uint64_t time);
 
             const char* getFile() const { return m_file; }
             int32_t getLine() const { return m_line; }
@@ -25,19 +53,20 @@ namespace sylar{
             uint32_t getThreadId() const { return m_threadId; }
             uint32_t getFiberId() const { return m_fiberId; }
             uint64_t getTime() const { return m_time; }
-            const std::string &getContent() const { return m_content; }
-            const std::string &getName() const { return m_name; }
-            // Loglevel::Level getLevel() const { return m_level; };
+            LogLevel::Level getLevel() const { return m_level; }
+            // const std::string &getContent() const { return m_content; }
+            // const std::string &getName() const { return m_name; }
 
         private:
-            const char* m_file = nullptr;   // 文件名
-            int32_t m_line = 0;             // 行号
+            LogLevel::Level m_level = level;
+            const char *m_file = nullptr;   // 文件名
+            int32_t  m_line = 0;             // 行号
             uint32_t m_elapse = 0;          // 程序启动开始到现在的毫秒数
             uint32_t m_threadId = 0;        // 线程id
             uint32_t m_fiberId = 0;         // 协程id
             uint64_t m_time = 0;            // 时间戳
-            std::string m_name;
-            std::string m_content; // 消息体,Message
+            // std::string m_content; // 消息体,Message
+            // std::string m_name;
     };
 
     // 日志级别
@@ -69,15 +98,17 @@ namespace sylar{
 
         public:
             class FormatItem{
-                public:
-                    typedef std::shared_ptr<FormatItem> ptr;
-                    // 虚析构函数
-                    virtual ~FormatItem(){};
-                    // 纯虚函数，如果子类没有override，就只是一个声明
-                    // 输出到文件
-                    // 1. 使用 std::ostream& 作为父类，兼容 stringstream 和 ofstream
-                    // 2. 必须加 & (引用)，流不能拷贝
-                    virtual void format(std::ostream& os, std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event) = 0;
+            public:
+                typedef std::shared_ptr<FormatItem> ptr;
+
+                FormatItem(const std::string &fmt = "") {};
+                // 虚析构函数
+                virtual ~FormatItem(){}
+                // 纯虚函数，如果子类没有override，就只是一个声明
+                // 输出到文件
+                // 1. 使用 std::ostream& 作为父类，兼容 stringstream 和 ofstream
+                // 2. 必须加 & (引用)，流不能拷贝
+                virtual void format(std::ostream& os, std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event) = 0;
             };
             void init();
 
@@ -95,9 +126,9 @@ namespace sylar{
             
             virtual void log(std::shared_ptr<Logger> Logger, LogLevel::Level level, LogEvent::ptr event) = 0;
 
-            LogFormatter::ptr getFormatter() const{
-                return m_formatter;
-            }
+            void setFormatter(LogFormatter::ptr val) { m_formatter = val; }
+
+            LogFormatter::ptr getFormatter() const { return m_formatter;}
 
         protected:
             LogLevel::Level m_level;
@@ -106,36 +137,13 @@ namespace sylar{
 
     };
 
-    // 日志器
-    class Logger{
-        public:
-            typedef std::shared_ptr<Logger> ptr;
-            Logger(const std::string &name = "root");
-            void log(LogLevel::Level level, LogEvent::ptr event);
-
-            void debug(LogEvent::ptr event);
-            void info(LogEvent::ptr event);
-            void warn(LogEvent::ptr event);
-            void error(LogEvent::ptr event);
-            void fatal(LogEvent::ptr event);
-
-            void addAppender(LogAppender::ptr appender);
-            void delAppender(LogAppender::ptr appender);
-            LogLevel::Level getLevel() const { return m_level; };
-            void setLevel(LogLevel::Level val) { m_level = val; };
-            const std::string getName() const { return m_name; };
-
-        private:
-            std::string m_name;                     // 日志名称
-            LogLevel::Level m_level;                // 日志级别
-            std::list<LogAppender::ptr> m_appenders;  // Appender集合
-    };
 
     // 输出到控制台的Appender
     class StdoutLogAppender : public LogAppender{
         public:
             typedef std::shared_ptr<StdoutLogAppender> ptr;
-            void log(LogLevel::Level level, LogEvent::ptr event) override;
+            // void log(LogLevel::Level level, LogEvent::ptr event) override;
+            void log(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event) override;
     };
 
     // 输出到文件的Appender 
@@ -143,7 +151,8 @@ namespace sylar{
         public:
             typedef std::shared_ptr<FileLogAppender> ptr;
             FileLogAppender(const std::string &filename);
-            void log(LogLevel::Level level, LogEvent::ptr event) override;
+            // void log(LogLevel::Level level, LogEvent::ptr event) override;
+            void log(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event) override;
             // 文件打开成功返回true
             bool reopen();
 
