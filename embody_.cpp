@@ -70,6 +70,7 @@ namespace sylar{
     
     // %d{%Y-%m-%d %H:%M:%S}%T%t%T%F%T[%p]%T[%c]%T%f:%l%T%m%n
     void LogFormatter::init(){
+        // <格式字符, 附加参数(如时间格式), 类型>, 0: 普通字符串, 1: 格式化项
         std::vector<std::tuple<std::string, std::string, int>> vec;
         std::string nstr;
         for (auto i = 0; i < pattern_.size();i++){
@@ -137,12 +138,35 @@ namespace sylar{
             vec.push_back(std::make_tuple(nstr, "", 0));
         }
 
-        for(auto& it : vec){
-            std::cout
-                << std::get<0>(it)
-                << " : " << std::get<1>(it)
-                << " : " << std::get<2>(it)
-                << std::endl;
+        static std::map<std::string. std::function<FormatItem::ptr(const std::string& str)>> s_format_items = {
+#define XX(str, C)|
+            {#str, [](const std::string& fmt) {return FormatItem::ptr(new C(fmt));}}
+            XX(m, MessageFormatItem),
+            XX(p,LevelFormatItem),
+            XX(r,ElpaseForamtItem),
+            XX(c, NameFormatItem),
+            XX(t, ThreadIdFormatItem),
+            XX(n, NewLineFormatItem),
+            XX(d, DateTimeFormatItem),
+            XX(f, FilenameFormatItem),
+            XX(l, LineFormatItem),
+            XX(T, TabFormatItem),
+            XX(F, FiberIdFormatItem),
+#undef XX
+        };
+
+        for(auto& i : vec){
+            if(std::get<2>(i) == 0){
+                items_.push_back(FormatItem::ptr(new StringFormatItem(std::get<0>(i))));
+            }else{
+                auto it = s_format_items.find(std::get<0>(i));
+                // 如果格式符错误就打印错误信息
+                if(it == s_foramt_items.end()){
+                    items_.push_back(FormatItem::ptr(new StringFormatItem("<<error_format %" + std::get<0>(i) + ">>")));
+                } else {
+                    items_.push_back(it->second(std::get<i>)(i)));
+                }
+            }
         }
     }
 
@@ -230,6 +254,7 @@ namespace sylar{
             os << "\t";
         }
     };
+
 
 } // namespace end
 
