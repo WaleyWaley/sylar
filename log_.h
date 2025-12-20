@@ -3,26 +3,49 @@
 #include <memory>   //智能指针所需的头文件
 #include <stdint.h>
 #include <list>
+#include <vector>
+#include <sstream>
 
 namespace sylar{
     class LogLevel{
     public:
-        enum Level{
-            UNKNOW = 0, //起手先来个未知级别兜底
-            DEBUG = 1,  //调试级别
-            INFO = 2,   //普通信息级别
-            WARN = 3,   //警告信息
-            ERROR = 4,  //错误信息
-            FATAL = 5   //灾难级信息
+        enum Level
+        {
+                UNKNOW = 0,
+                DEBUG = 1,
+                INFO = 2,
+                WARN = 3,
+                ERROR = 4,
+                FATAL = 5
         };
-        // 用char* 的原因是直接返回指向这块内存的指针，不需要产生任何内存拷贝，也不需要动态分配内存。比 string快得多
-        static const char* ToString(LogLevel::Level level);
+            // 把enum变量转换为字符串比如:Level::DEBUG -> "DEBUG"
+        static const char *ToString(LogLevel::Level Level);
     };
+    
+    class LogFormatter{
+    public:
+        typedef std::shared_ptr<LogFormatter> ptr;
+        LogFormatter(const std::string &pattern);
+        void init();
+        std::string format(LogEvent::ptr event);
 
+        // 用来解析各种格式符号
+        class FormaterItem{
+        public:
+            typedef std::shared_ptr<FormaterItem> ptr;
+            // 有子类 要虚析构
+            virtual ~FormaterItem(){};
+            virtual void format(std::ostream &os, LogEvent::ptr event) = 0;
+        };
+
+    private:
+        std::string pattern_;
+        std::vector<LogFormatter::FormaterItem::ptr> items_;
+    };
     class LogEvent {
     public:
         typedef std::shared_ptr<LogEvent> ptr;
-        LogEvent(LogLevel::Level level, const char *file, int32_t line, uint32_t elapse, uint32_t threadId, uint32_t fiberId, uint64_t time);
+        LogEvent(std::string logName,LogLevel::Level level, const char *file, int32_t line, uint32_t elapse, uint32_t threadId, uint32_t fiberId, uint64_t time);
 
         const char* getFile() const { return file_;}
         int32_t getLine() const { return line_;}
@@ -31,6 +54,9 @@ namespace sylar{
         uint32_t getFiberId() const { return fiberId_;}
         uint64_t getTime() const { return time_;}
         LogLevel::Level getLevel() const { return level_;}
+        std::string getLogName() const { return logName_;}
+        std::stringstream& getSS() { return ss_; }
+
     private:
         LogLevel::Level level_;       //日志级别           
         const char* file_ = nullptr;  //文件名
@@ -39,8 +65,31 @@ namespace sylar{
         uint32_t threadId_ = 0;       //线程id
         uint32_t fiberId_ = 0;        //协程id
         uint64_t time_ = 0;           //时间戳
+        std::string logName_;         //日志名
+        std::stringstream ss_;       //字符流
     };
-    LogEvent::LogEvent(LogLevel::Level level, const char *file, int32_t line, uint32_t elapse, uint32_t threadId, uint32_t fiberId, uint64_t time) : level_(level), file_(file), line_(line), elapse_(elapse), threadId_(threadId), fiberId_(fiberId), time_(time) {}
+    LogEvent::LogEvent(std::string logName, LogLevel::Level level, const char *file, int32_t line, uint32_t elapse, uint32_t threadId, uint32_t fiberId, uint64_t time) : logName_(logName),level_(level), file_(file), line_(line), elapse_(elapse), threadId_(threadId), fiberId_(fiberId), time_(time) {}
+
+    class LogFormatter{
+    public:
+        typedef std::shared_ptr<LogFormatter> ptr;
+        LogFormatter(const std::string &pattern);
+        void init();
+        std::string format(LogEvent::ptr event);
+
+        // 用来解析各种格式符号
+        class FormaterItem{
+        public:
+            typedef std::shared_ptr<FormaterItem> ptr;
+            // 有子类 要虚析构
+            virtual ~FormaterItem(){};
+            virtual void format(std::ostream &os, LogEvent::ptr event) = 0;
+        };
+
+    private:
+        std::string pattern_;
+        std::vector<LogFormatter::FormaterItem::ptr> items_;
+    };
 
     class LogAppender
     {
@@ -51,6 +100,12 @@ namespace sylar{
         virtual ~LogAppender() {}
         // 输出函数为纯虚函数，因为具体实现各个子类不一样，由各个子类自己决定
         virtual void log(LogEvent::ptr event) = 0;
+
+        void setFormatter(LogFormatter::ptr val) { formatter_ = val; }
+        LogFormatter::ptr getFormatter() const { return formatter_; }
+
+    protected:
+        LogFormatter::ptr formatter_;
     };
 
     class Logger{
@@ -82,13 +137,20 @@ namespace sylar{
     Logger::Logger(const std::string &name) : name_(name) { level_ = LogLevel::DEBUG; }
 
 
+    // 在初始化的时候就把pattern解析好
+    LogFormatter::LogFormatter(const std::string& pattern):pattern_(pattern){init();}
+
 
     class StdoutLogAppender:public LogAppender{
     public:
         typedef std::shared_ptr<StdoutLogAppender> ptr;
+        StdoutLogAppender(){
+            formatter_.reset(new LogFormatter("%d{%Y-%m-%d %H:%M:%S}%T%t%T%F%T[%p]%T[%c]%T%f:%l%T%m%n"));
+        }
         // 重写父类方法
         void log(LogEvent::ptr event) override;
     };
+
     
     class FileLogAppender:public LogAppender{
     public:
@@ -101,30 +163,8 @@ namespace sylar{
     FileLogAppender::FileLogAppender(const std::string& filename) : filename_(filename){}
 
 
-    class LogFormatter{
-    public:
-        typedef std::shared_ptr<LogFormatter> ptr;
-        LogFormatter(const std::string &pattern);
-        void init();
-        std::string format(LogEvent::ptr event);
 
-        // 用来解析各种格式符号
-        class FormaterItem{
-        public:
-            typedef std::shared_ptr<FormaterItem> ptr;
-            // 有子类 要虚析构
-            virtual ~FormaterItem(){};
-            virtual void format(std::ostream &os, LogEvent::ptr event) = 0;
-        };
 
-    private:
-        std::string pattern_;
-        std::vector<LogFormatter::FormaterItem> items_;
-    };
-    // 在初始化的时候就把pattern解析好
-    LogFormatter::LogFormatter(const std::string& pattern):pattern_(pattern){init();}
-
-    std::string LogFormatter::format(LogEvent::ptr event) { return ""; }
 
 
 
