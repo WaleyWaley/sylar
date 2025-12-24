@@ -9,6 +9,18 @@ namespace sylar{
     class LogEvent {
     public:
         typedef std::shared_ptr<LogEvent> ptr;
+     /**
+     * @brief 构造函数
+     * @param[in] logger 日志器
+     * @param[in] level 日志级别
+     * @param[in] file 文件名
+     * @param[in] line 文件行号
+     * @param[in] elapse 程序启动依赖的耗时(毫秒)
+     * @param[in] threadId 线程id
+     * @param[in] fiberId 协程id
+     * @param[in] time 日志事件(秒)
+     * @param[in] thread_name 线程名称
+     */
         LogEvent(std::string logName,LogLevel::Level level, const char *file, int32_t line, uint32_t elapse, uint32_t threadId, uint32_t fiberId, uint64_t time);
 
         const char* getFile() const { return file_;}

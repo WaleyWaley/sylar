@@ -26,10 +26,15 @@ namespace sylar{
         void addAppender(LogAppender::ptr appender);
         // 删除一个适配器
         void delAppender(LogAppender::ptr appender);
+        /**
+        * @brief 将日志器的配置转成YAML String
+        */
+        std::string toYamlString();
     private:
         std::string name_;
         LogLevel::Level level_;
         // Appender
         std::list<LogAppender::ptr> appender_;
+
     };
 } // sylar

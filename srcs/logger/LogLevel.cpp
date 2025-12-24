@@ -1,5 +1,5 @@
 #include "logger/LogLevel.h"
-
+#include <string>
 using namespace sylar;
 
 // level转换为字符串
@@ -21,3 +21,22 @@ const char* LogLevel::ToString(LogLevel::Level level){
         }
         return "UNKNOW";
 }
+
+LogLevel::Level LogLevel::FromString(std::string& str){
+#define XX(level, v)    \
+    if(str == #v){  \
+        return LogLevel::level;
+    }
+    XX(DEBUG, debug);
+    XX(INFO, info);
+    XX(WARN, warn);
+    XX(ERROR, error);
+    XX(FATAL, fatal);
+    XX(DEBUG, DEBUG);
+    XX(INFO, INFO);
+    XX(WARN, WARN);
+    XX(ERROR, ERROR);
+    XX(FATAL, FATAL);
+#undef XX
+}
+

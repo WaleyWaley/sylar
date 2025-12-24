@@ -24,4 +24,9 @@ void Logger::delAppender(LogAppender::ptr appender){
             break;
         }
     }
+
+
+
+
+
 }

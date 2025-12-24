@@ -2,6 +2,7 @@
 #include "LogEvent.h"
 #include "LogFormatter.h"
 #include <memory>
+#include <iostream>
 
 namespace sylar{
     class LogAppender
@@ -24,18 +25,30 @@ namespace sylar{
     class StdoutLogAppender:public LogAppender{
         public:
             typedef std::shared_ptr<StdoutLogAppender> ptr;
-            StdoutLogAppender(){
-                formatter_.reset(new LogFormatter("%d{%Y-%m-%d %H:%M:%S}%T%t%T%F%T[%p]%T[%c]%T%f:%l%T%m%n"));
-            }
+            StdoutLogAppender();
             // 重写父类方法
             void log(LogEvent::ptr event) override;
-        };
+
+             /**
+             * @brief 将日志输出目标的配置转成YAML String
+             */
+            // std::string toYamlString() override;
+    };
 
     class FileLogAppender:public LogAppender{
         public:
             typedef std::shared_ptr<FileLogAppender> ptr;
+
+        /**
+         * @brief 构造函数
+         * @param[in] file 日志文件路径
+         */
             FileLogAppender(const std::string &filename);
+
             void log(LogEvent::ptr event) override;
+
+            bool reopen();
+
         private:
             std::string filename_;
         };

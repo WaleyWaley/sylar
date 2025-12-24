@@ -1,0 +1,11 @@
+name: "JYF"
+sex: "male"
+age: 30
+
+system:
+  port: "8080"
+  value: "config_value"
+  int_vec: 
+    - 10
+    - 20
+    - 30

@@ -2,10 +2,10 @@
 
 using namespace sylar;
 
-LogEventWrap::LogEventWrap(Logger::ptr logger, LogEvent::ptr e) : logger_(logger), event_(e) {}
+LogEventWrap::LogEventWrap(LogEvent::ptr e) : event_(e) {}
 
 LogEventWrap::~LogEventWrap(){
-    logger_->log(event_);
+    event_->getLogger()->log(event_->getLevel(), event_);
 }
 
 std::stringstream &LogEventWrap::getSS() { return event_->getSS(); }
