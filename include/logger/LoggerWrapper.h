@@ -2,6 +2,9 @@
 #include "logger/LogEvent.h"
 
 namespace sylar{
+    /**
+    *   @brief 日志事件包装器。将logEvent打包，可以直接通过使用该类完成对日志的定义。
+    */
     class LogEventWrap{
     public:
          /**

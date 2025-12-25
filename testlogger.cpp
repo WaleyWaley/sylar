@@ -25,18 +25,17 @@ int main(int argc, char **argv)
 
     LogFormatter::ptr formatter(new LogFormatter(
         "%d{%Y-%m-%d %H:%M:%S}%T%t%T%F%T[%p]%T[%c]%T%f:%l%T%m%n"));
-    // 添加控制台输出适配器
-    // StdoutLogAppender::ptr stdApd(new StdoutLogAppender());
-    FileLogAppender::ptr fileApd(new FileLogAppender("log.txt"));
 
-    // stdApd->setFormatter(formatter);
+    // 添加控制台输出适配器
+    SqlLogAppender::ptr stdApd(new SqlLogAppender());
+
     fileApd->setFormatter(formatter);
-    // lg->addAppender(stdApd);
+
     lg->addAppender(fileApd);
 
     // 使用宏
-    Log_LEVEL(lg, LogLevel::INFO) << "Hello JYF!";
-    SYLAR_LOG_FMT_LEVEL()
+    SYLAR_LOG_FMT_LEVEL(lg, LogLevel::INFO, "Hello JYF!");
+
     std::cout << "=======END=======" << std::endl;
     return 0;
 }

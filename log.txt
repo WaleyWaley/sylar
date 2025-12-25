@@ -1,1 +1,5 @@
 2025-12-22 17:50:44	1	0	[INFO]	[XYZ]	testlogger.cpp:38	Hello JYF!
+2025-12-24 20:16:39	1	0	[INFO]	[XYZ]	testlogger.cpp:38	Hello JYF!
+2025-12-24 20:43:04	1	0	[INFO]	[XYZ]	testlogger.cpp:38	Hello JYF!
+2025-12-25 11:44:07	1	0	[INFO]	[XYZ]	testlogger.cpp:38	Hello JYF!
+2025-12-25 17:42:31	1	0	[INFO]	[XYZ]	testlogger.cpp:38	Hello JYF!

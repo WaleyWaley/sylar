@@ -2,7 +2,7 @@
 
 using namespace sylar;
 
-LogEventWrap::LogEventWrap(LogEvent::ptr e) : event_(e) {}
+LogEventWrap::LogEventWrap(LogEvent::ptr event) : event_(event) {}
 
 LogEventWrap::~LogEventWrap(){
     event_->getLogger()->log(event_->getLevel(), event_);

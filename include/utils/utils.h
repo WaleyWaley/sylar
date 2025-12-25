@@ -1,5 +1,8 @@
 #pragma once
 
+/**
+*   @brief 日志级别宏定义
+*/
 #define Log_LEVEL(logger, level)\
 if(logger->getLevel() <= level)\
     LogEventWrap(logger, LogEvent::ptr(new LogEvent(logger->getName(), level, __FILE__, __LINE__, 1234, 1, 0, time(0)))).getSS()

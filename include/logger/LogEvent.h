@@ -1,11 +1,13 @@
 #pragma once
-#include "LogLevel.h"
+#include "logger/LogLevel.h"
+// #include "logger/Logger.h"
 #include <memory>
 #include <cstdint> // for uint32_t uint64_t
 #include <string>
 #include <sstream>
 
 namespace sylar{
+    class Logger;
     class LogEvent {
     public:
         typedef std::shared_ptr<LogEvent> ptr;
@@ -23,6 +25,7 @@ namespace sylar{
      */
         LogEvent(std::string logName,LogLevel::Level level, const char *file, int32_t line, uint32_t elapse, uint32_t threadId, uint32_t fiberId, uint64_t time);
 
+        std::shared_ptr<Logger> getLogger() const {return logger_;}
         const char* getFile() const { return file_;}
         int32_t getLine() const { return line_;}
         uint32_t getElapse() const { return elapse_;}
@@ -43,6 +46,7 @@ namespace sylar{
         uint64_t time_ = 0;           //时间戳
         std::string logName_;         //日志名
         std::stringstream ss_;       //字符流
+        std::shared_ptr<Logger> logger_;
     };
 
 

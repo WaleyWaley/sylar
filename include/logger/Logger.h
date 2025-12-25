@@ -22,8 +22,10 @@ namespace sylar{
 
         //定义了一个输出日志的方法 传入想要查看的最大日志级别
         void log(LogEvent::ptr event);
+
         // 新增一个适配器
         void addAppender(LogAppender::ptr appender);
+
         // 删除一个适配器
         void delAppender(LogAppender::ptr appender);
         /**
